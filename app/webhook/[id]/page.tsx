@@ -1,25 +1,54 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { WebhookRequest } from '@/app/types/webhook';
 import { useParams } from 'next/navigation';
+import { IndexedDBService } from '@/app/services/indexedDB';
 
 export default function WebhookPage() {
   const [webhooks, setWebhooks] = useState<WebhookRequest[]>([]);
+  const [endpointUrl, setEndpointUrl] = useState<string>('');
   const params = useParams();
   const id = params.id as string;
   const [selectedWebhook, setSelectedWebhook] = useState<WebhookRequest | null>(null);
+  const dbService = useRef(new IndexedDBService());
 
   useEffect(() => {
+    // Establecer la URL del endpoint después del montaje del componente
+    setEndpointUrl(`${window.location.origin}/api/webhook/${id}`);
+  }, [id]);
+
+  useEffect(() => {
+    const loadStoredWebhooks = async () => {
+      try {
+        const storedWebhooks = await dbService.current.getWebhooks(id);
+        if (storedWebhooks.length > 0) {
+          setWebhooks(storedWebhooks.sort((a, b) => b.timestamp - a.timestamp));
+        }
+      } catch (error) {
+        console.error('Error loading stored webhooks:', error);
+      }
+    };
+
     const fetchWebhooks = async () => {
       try {
         const response = await fetch(`/api/webhook/${id}`);
         const data = await response.json();
-        setWebhooks(data.sort((a: WebhookRequest, b: WebhookRequest) => b.timestamp - a.timestamp));
+        const sortedData = data.sort((a: WebhookRequest, b: WebhookRequest) => 
+          b.timestamp - a.timestamp
+        );
+        
+        setWebhooks(sortedData);
+        
+        // Guardar en IndexedDB
+        await dbService.current.saveWebhooks(id, sortedData);
       } catch (error) {
         console.error('Error fetching webhooks:', error);
       }
     };
+
+    // Cargar webhooks almacenados primero
+    loadStoredWebhooks();
 
     // Fetch inicial
     fetchWebhooks();
@@ -28,22 +57,6 @@ export default function WebhookPage() {
     const interval = setInterval(fetchWebhooks, 2000);
     return () => clearInterval(interval);
   }, [id]);
-
-  const getEndpointUrl = () => {
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/api/webhook/${id}`;
-    }
-    return '';
-  };
-
-  const copyEndpoint = async () => {
-    try {
-      await navigator.clipboard.writeText(getEndpointUrl());
-      // Opcional: Agregar feedback visual aquí
-    } catch (err) {
-      console.error('Error al copiar:', err);
-    }
-  };
 
   return (
     <div className="p-8 h-screen">
@@ -56,11 +69,11 @@ export default function WebhookPage() {
           <div className="flex-1">
             <div className="text-sm text-gray-500 mb-1">Endpoint URL:</div>
             <code className="text-sm font-mono break-all">
-              {getEndpointUrl()}
+              {endpointUrl}
             </code>
           </div>
           <button
-            onClick={copyEndpoint}
+            onClick={() => navigator.clipboard.writeText(endpointUrl)}
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors flex items-center gap-2"
           >
             <svg 
