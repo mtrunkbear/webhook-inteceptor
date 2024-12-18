@@ -12,6 +12,11 @@ export default function WebhookPage() {
   const id = params.id as string;
   const [selectedWebhook, setSelectedWebhook] = useState<WebhookRequest | null>(null);
   const dbService = useRef(new IndexedDBService());
+  const [expandedSections, setExpandedSections] = useState({
+    headers: true,
+    body: true,
+    query: true
+  });
 
   useEffect(() => {
     // Establecer la URL del endpoint después del montaje del componente
@@ -57,6 +62,13 @@ export default function WebhookPage() {
     const interval = setInterval(fetchWebhooks, 2000);
     return () => clearInterval(interval);
   }, [id]);
+
+  const toggleSection = (section: 'headers' | 'body' | 'query') => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   return (
     <div className="p-8 h-screen">
@@ -135,7 +147,15 @@ export default function WebhookPage() {
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <h2 className="font-semibold">Headers</h2>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleSection('headers')}
+                          className="text-gray-400 hover:text-white transition-colors"
+                        >
+                          {expandedSections.headers ? '▼' : '▶'}
+                        </button>
+                        <h2 className="font-semibold">Headers</h2>
+                      </div>
                       <button
                         onClick={() => navigator.clipboard.writeText(JSON.stringify(selectedWebhook.headers, null, 2))}
                         className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors"
@@ -143,14 +163,24 @@ export default function WebhookPage() {
                         Copiar Headers
                       </button>
                     </div>
-                    <pre className="text-sm bg-black/10 p-4 rounded overflow-x-auto">
-                      {JSON.stringify(selectedWebhook.headers, null, 2)}
-                    </pre>
+                    {expandedSections.headers && (
+                      <pre className="text-sm bg-black/10 p-4 rounded overflow-x-auto">
+                        {JSON.stringify(selectedWebhook.headers, null, 2)}
+                      </pre>
+                    )}
                   </div>
                   
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <h2 className="font-semibold">Body</h2>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleSection('body')}
+                          className="text-gray-400 hover:text-white transition-colors"
+                        >
+                          {expandedSections.body ? '▼' : '▶'}
+                        </button>
+                        <h2 className="font-semibold">Body</h2>
+                      </div>
                       <button
                         onClick={() => navigator.clipboard.writeText(JSON.stringify(selectedWebhook.body, null, 2))}
                         className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors"
@@ -158,14 +188,24 @@ export default function WebhookPage() {
                         Copiar Body
                       </button>
                     </div>
-                    <pre className="text-sm bg-black/10 p-4 rounded overflow-x-auto">
-                      {JSON.stringify(selectedWebhook.body, null, 2)}
-                    </pre>
+                    {expandedSections.body && (
+                      <pre className="text-sm bg-black/10 p-4 rounded overflow-x-auto">
+                        {JSON.stringify(selectedWebhook.body, null, 2)}
+                      </pre>
+                    )}
                   </div>
                   
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <h2 className="font-semibold">Query Params</h2>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleSection('query')}
+                          className="text-gray-400 hover:text-white transition-colors"
+                        >
+                          {expandedSections.query ? '▼' : '▶'}
+                        </button>
+                        <h2 className="font-semibold">Query Params</h2>
+                      </div>
                       <button
                         onClick={() => navigator.clipboard.writeText(JSON.stringify(selectedWebhook.query, null, 2))}
                         className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors"
@@ -173,9 +213,11 @@ export default function WebhookPage() {
                         Copiar Query
                       </button>
                     </div>
-                    <pre className="text-sm bg-black/10 p-4 rounded overflow-x-auto">
-                      {JSON.stringify(selectedWebhook.query, null, 2)}
-                    </pre>
+                    {expandedSections.query && (
+                      <pre className="text-sm bg-black/10 p-4 rounded overflow-x-auto">
+                        {JSON.stringify(selectedWebhook.query, null, 2)}
+                      </pre>
+                    )}
                   </div>
                 </div>
               </div>
