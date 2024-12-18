@@ -3,7 +3,7 @@ export interface WebhookRequest {
   timestamp: number;
   method: string;
   headers: Record<string, string>;
-  body: any;
+  body: unknown;
   query: Record<string, string>;
   path: string;
 } 

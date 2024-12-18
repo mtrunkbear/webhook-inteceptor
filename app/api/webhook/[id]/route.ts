@@ -2,18 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { WebhookRequest } from "@/app/types/webhook";
 
 // Almacenamiento temporal en memoria (para desarrollo)
-let webhooks: WebhookRequest[] = [];
+const webhooks: WebhookRequest[] = [];
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = params.id;
+  const id = (await params).id;
   let body;
   try {
     body = await request.json();
   } catch (e) {
     body = null;
+    console.error('Error parsing JSON body:', e);
   }
 
   const headers: Record<string, string> = {};
@@ -37,9 +38,9 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = params.id;
+  const id = (await params).id;
   const filteredWebhooks = webhooks.filter(w => w.path === `/webhook/${id}`);
   return NextResponse.json(filteredWebhooks);
-} 
+}
