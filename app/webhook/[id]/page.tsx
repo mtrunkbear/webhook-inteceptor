@@ -43,10 +43,18 @@ export default function WebhookPage() {
           b.timestamp - a.timestamp
         );
         
-        setWebhooks(sortedData);
-        
-        // Guardar en IndexedDB
-        await dbService.current.saveWebhooks(id, sortedData);
+        // Solo actualizar si hay datos nuevos
+        if (sortedData.length > 0) {
+          setWebhooks(prevWebhooks => {
+            // Combinar webhooks existentes con nuevos y eliminar duplicados
+            const combined = [...prevWebhooks, ...sortedData];
+            const unique = Array.from(new Map(combined.map(hook => [hook.id, hook])).values());
+            return unique.sort((a, b) => b.timestamp - a.timestamp);
+          });
+          
+          // Guardar en IndexedDB
+          await dbService.current.saveWebhooks(id, sortedData);
+        }
       } catch (error) {
         console.error('Error fetching webhooks:', error);
       }
