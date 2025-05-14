@@ -4,9 +4,11 @@ import { useEffect, useState, useRef } from 'react';
 import { WebhookRequest } from '@/app/types/webhook';
 import { useParams } from 'next/navigation';
 import { IndexedDBService } from '@/app/services/indexedDB';
+import { Search, X } from 'lucide-react';
 
 export default function WebhookPage() {
   const [webhooks, setWebhooks] = useState<WebhookRequest[]>([]);
+  const [filteredWebhooks, setFilteredWebhooks] = useState<WebhookRequest[]>([]);
   const [endpointUrl, setEndpointUrl] = useState<string>('');
   const params = useParams();
   const id = params.id as string;
@@ -17,6 +19,8 @@ export default function WebhookPage() {
     body: true,
     query: true
   });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchFilter, setSearchFilter] = useState<'all' | 'headers' | 'body' | 'query'>('all');
 
   useEffect(() => {
     // Establecer la URL del endpoint después del montaje del componente
@@ -71,6 +75,29 @@ export default function WebhookPage() {
     return () => clearInterval(interval);
   }, [id]);
 
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredWebhooks(webhooks);
+      return;
+    }
+
+    const filtered = webhooks.filter(webhook => {
+      const term = searchTerm.toLowerCase();
+      
+      if (searchFilter === 'all') {
+        return (
+          JSON.stringify(webhook.headers).toLowerCase().includes(term) ||
+          JSON.stringify(webhook.body).toLowerCase().includes(term) ||
+          JSON.stringify(webhook.query).toLowerCase().includes(term)
+        );
+      }
+      
+      return JSON.stringify(webhook[searchFilter]).toLowerCase().includes(term);
+    });
+    
+    setFilteredWebhooks(filtered);
+  }, [webhooks, searchTerm, searchFilter]);
+
   const toggleSection = (section: 'headers' | 'body' | 'query') => {
     setExpandedSections(prev => ({
       ...prev,
@@ -121,22 +148,66 @@ export default function WebhookPage() {
         <div className="flex gap-6 h-[calc(100vh-120px)]">
           {/* Panel izquierdo - Lista de webhooks */}
           <div className="w-1/3 overflow-y-auto border border-cyan-500/30 rounded-lg p-4 bg-gray-800/50 shadow-[0_0_15px_rgba(34,211,238,0.2)]">
-            {webhooks.map((webhook) => (
-              <div
-                key={webhook.id}
-                className="p-3 border border-cyan-500/30 rounded-lg mb-2 cursor-pointer hover:bg-cyan-500/10 transition-all bg-gray-800/50"
-                onClick={() => setSelectedWebhook(webhook)}
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-mono text-sm text-cyan-300">
-                    {new Date(webhook.timestamp).toLocaleString()}
-                  </span>
-                  <span className="px-2 py-1 bg-cyan-500/20 border border-cyan-500/50 rounded text-cyan-300 text-xs shadow-[0_0_10px_rgba(34,211,238,0.3)]">
-                    {webhook.method}
-                  </span>
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2 relative">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-cyan-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Buscar en webhooks..."
+                    className="w-full pl-9 pr-8 py-2 bg-gray-800 border border-cyan-500/30 rounded-lg text-cyan-100 placeholder-cyan-600 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  />
+                  {searchTerm && (
+                    <button 
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                    >
+                      <X className="h-4 w-4 text-cyan-400 hover:text-cyan-300" />
+                    </button>
+                  )}
                 </div>
               </div>
-            ))}
+              <div className="flex gap-2 mb-3">
+                {(['all', 'headers', 'body', 'query'] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setSearchFilter(filter)}
+                    className={`px-3 py-1 text-xs rounded-full transition-all ${
+                      searchFilter === filter
+                        ? 'bg-cyan-500/30 text-cyan-200 border border-cyan-500/50 shadow-[0_0_10px_rgba(34,211,238,0.3)]'
+                        : 'bg-gray-800 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20'
+                    }`}
+                  >
+                    {filter === 'all' ? 'Todos' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {filteredWebhooks.length === 0 ? (
+              <p className="text-cyan-400 text-center py-4">No se encontraron resultados</p>
+            ) : (
+              filteredWebhooks.map((webhook) => (
+                <div
+                  key={webhook.id}
+                  className={`p-3 border border-cyan-500/30 rounded-lg mb-2 cursor-pointer hover:bg-cyan-500/10 transition-all bg-gray-800/50 ${
+                    selectedWebhook?.id === webhook.id ? 'bg-cyan-500/20 border-cyan-500/50' : ''
+                  }`}
+                  onClick={() => setSelectedWebhook(webhook)}
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="font-mono text-sm text-cyan-300">
+                      {new Date(webhook.timestamp).toLocaleString()}
+                    </span>
+                    <span className="px-2 py-1 bg-cyan-500/20 border border-cyan-500/50 rounded text-cyan-300 text-xs shadow-[0_0_10px_rgba(34,211,238,0.3)]">
+                      {webhook.method}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
           {/* Panel derecho - Detalles del webhook */}
