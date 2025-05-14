@@ -79,22 +79,22 @@ export default function WebhookPage() {
   };
 
   return (
-    <div className="p-8 h-screen">
+    <div className="p-8 h-screen bg-gray-900">
       <div className="mb-6 space-y-4">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
           Webhook Interceptor - {id}
         </h1>
         
-        <div className="flex items-center gap-3 p-4 bg-white/10 rounded-lg border">
+        <div className="flex items-center gap-3 p-4 bg-gray-800/50 rounded-lg border border-cyan-500/30 shadow-[0_0_15px_rgba(34,211,238,0.2)]">
           <div className="flex-1">
-            <div className="text-sm text-gray-500 mb-1">Endpoint URL:</div>
-            <code className="text-sm font-mono break-all">
+            <div className="text-sm text-cyan-400 mb-1">Endpoint URL:</div>
+            <code className="text-sm font-mono break-all text-white">
               {endpointUrl}
             </code>
           </div>
           <button
             onClick={() => navigator.clipboard.writeText(endpointUrl)}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 rounded-lg transition-all border border-cyan-500/50 shadow-[0_0_10px_rgba(34,211,238,0.3)] hover:shadow-[0_0_15px_rgba(34,211,238,0.4)]"
           >
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
@@ -116,22 +116,22 @@ export default function WebhookPage() {
       </div>
 
       {webhooks.length === 0 ? (
-        <p className="text-gray-500">No se han recibido webhooks aún...</p>
+        <p className="text-cyan-400">No se han recibido webhooks aún...</p>
       ) : (
         <div className="flex gap-6 h-[calc(100vh-120px)]">
           {/* Panel izquierdo - Lista de webhooks */}
-          <div className="w-1/3 overflow-y-auto border rounded-lg p-4">
+          <div className="w-1/3 overflow-y-auto border border-cyan-500/30 rounded-lg p-4 bg-gray-800/50 shadow-[0_0_15px_rgba(34,211,238,0.2)]">
             {webhooks.map((webhook) => (
               <div
                 key={webhook.id}
-                className="p-3 border rounded-lg mb-2 cursor-pointer hover:bg-white/10 transition-colors"
+                className="p-3 border border-cyan-500/30 rounded-lg mb-2 cursor-pointer hover:bg-cyan-500/10 transition-all bg-gray-800/50"
                 onClick={() => setSelectedWebhook(webhook)}
               >
                 <div className="flex justify-between items-center">
-                  <span className="font-mono text-sm">
+                  <span className="font-mono text-sm text-cyan-300">
                     {new Date(webhook.timestamp).toLocaleString()}
                   </span>
-                  <span className="px-2 py-1 bg-blue-500 rounded text-white text-xs">
+                  <span className="px-2 py-1 bg-cyan-500/20 border border-cyan-500/50 rounded text-cyan-300 text-xs shadow-[0_0_10px_rgba(34,211,238,0.3)]">
                     {webhook.method}
                   </span>
                 </div>
@@ -140,97 +140,49 @@ export default function WebhookPage() {
           </div>
 
           {/* Panel derecho - Detalles del webhook */}
-          <div className="w-2/3 border rounded-lg p-4 overflow-y-auto">
+          <div className="w-2/3 border border-cyan-500/30 rounded-lg p-4 overflow-y-auto bg-gray-800/50 shadow-[0_0_15px_rgba(34,211,238,0.2)]">
             {selectedWebhook ? (
               <div className="space-y-4">
                 <div className="flex justify-between items-center mb-4">
-                  <span className="font-mono text-lg">
+                  <span className="font-mono text-lg text-cyan-300">
                     {new Date(selectedWebhook.timestamp).toLocaleString()}
                   </span>
-                  <span className="px-3 py-1 bg-blue-500 rounded text-white">
+                  <span className="px-3 py-1 bg-cyan-500/20 border border-cyan-500/50 rounded text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]">
                     {selectedWebhook.method}
                   </span>
                 </div>
 
                 <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2">
+                  {['headers', 'body', 'query'].map((section) => (
+                    <div key={section}>
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => toggleSection(section as 'headers' | 'body' | 'query')}
+                            className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                          >
+                            {expandedSections[section as keyof typeof expandedSections] ? '▼' : '▶'}
+                          </button>
+                          <h2 className="font-semibold text-cyan-300">{section.charAt(0).toUpperCase() + section.slice(1)}</h2>
+                        </div>
                         <button
-                          onClick={() => toggleSection('headers')}
-                          className="text-gray-400 hover:text-white transition-colors"
+                          onClick={() => navigator.clipboard.writeText(JSON.stringify(selectedWebhook[section as keyof WebhookRequest], null, 2))}
+                          className="px-3 py-1 text-sm bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded text-cyan-300 transition-all shadow-[0_0_10px_rgba(34,211,238,0.3)] hover:shadow-[0_0_15px_rgba(34,211,238,0.4)]"
                         >
-                          {expandedSections.headers ? '▼' : '▶'}
+                          Copiar {section.charAt(0).toUpperCase() + section.slice(1)}
                         </button>
-                        <h2 className="font-semibold">Headers</h2>
                       </div>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(JSON.stringify(selectedWebhook.headers, null, 2))}
-                        className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors"
-                      >
-                        Copiar Headers
-                      </button>
+                      {expandedSections[section as keyof typeof expandedSections] && (
+                        <pre className="text-sm bg-gray-900/50 p-4 rounded overflow-x-auto border border-cyan-500/30 text-cyan-100">
+                          {JSON.stringify(selectedWebhook[section as keyof WebhookRequest], null, 2)}
+                        </pre>
+                      )}
                     </div>
-                    {expandedSections.headers && (
-                      <pre className="text-sm bg-black/10 p-4 rounded overflow-x-auto">
-                        {JSON.stringify(selectedWebhook.headers, null, 2)}
-                      </pre>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => toggleSection('body')}
-                          className="text-gray-400 hover:text-white transition-colors"
-                        >
-                          {expandedSections.body ? '▼' : '▶'}
-                        </button>
-                        <h2 className="font-semibold">Body</h2>
-                      </div>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(JSON.stringify(selectedWebhook.body, null, 2))}
-                        className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors"
-                      >
-                        Copiar Body
-                      </button>
-                    </div>
-                    {expandedSections.body && (
-                      <pre className="text-sm bg-black/10 p-4 rounded overflow-x-auto">
-                        {JSON.stringify(selectedWebhook.body, null, 2)}
-                      </pre>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => toggleSection('query')}
-                          className="text-gray-400 hover:text-white transition-colors"
-                        >
-                          {expandedSections.query ? '▼' : '▶'}
-                        </button>
-                        <h2 className="font-semibold">Query Params</h2>
-                      </div>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(JSON.stringify(selectedWebhook.query, null, 2))}
-                        className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors"
-                      >
-                        Copiar Query
-                      </button>
-                    </div>
-                    {expandedSections.query && (
-                      <pre className="text-sm bg-black/10 p-4 rounded overflow-x-auto">
-                        {JSON.stringify(selectedWebhook.query, null, 2)}
-                      </pre>
-                    )}
-                  </div>
+                  ))}
                 </div>
               </div>
             ) : (
-              <div className="h-full flex items-center justify-center text-gray-500">
+              <div className="h-full flex items-center justify-center text-cyan-400">
                 Selecciona un webhook para ver sus detalles
               </div>
             )}
